@@ -52,13 +52,14 @@ export enum MetadataKey {
   MasterEditionV2 = 6,
   EditionMarker = 7,
 }
-
+ 
 export enum MetadataCategory {
   Audio = 'audio',
   Video = 'video',
   Image = 'image',
   VR = 'vr',
   HTML = 'html',
+  XLS = 'xls',
 }
 
 export type MetadataFile = {

@@ -19,6 +19,7 @@ import { PackCreateView } from './views/packCreate';
 import { BillingView } from './views/auction/billing';
 import { CollectionsView } from './views/collections';
 import { CollectionDetailView } from './views/collections/collectionDetail';
+import { UploadMetadataView } from './views/artCreate/uploadMetadata';
 
 export function Routes() {
   const shouldEnableNftPacks = process.env.NEXT_ENABLE_NFT_PACKS === 'true';
@@ -81,6 +82,11 @@ export function Routes() {
             <Route
               path="/collection/:id"
               component={() => <CollectionDetailView />}
+            />
+            <Route 
+              exact
+              path="/upload/:step_param?"
+              component={() => <UploadMetadataView />}
             />
             <Route path="/" component={() => <HomeView />} />
           </Switch>

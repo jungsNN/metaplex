@@ -81,13 +81,14 @@ export function MetaProvider({
     [setState],
   );
   async function pullAllMetadata() {
-    if (isLoading) return false;
+    // if (isLoading) return false;
     if (!storeAddress) {
       if (isReady) {
         setIsLoading(false);
       }
       return;
     } else if (!state.store) {
+      console.log('no state.store ', state.store)
       setIsLoading(true);
     }
     setIsLoading(true);

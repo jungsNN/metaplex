@@ -46,7 +46,8 @@
     "react-transition-group": "^4.4.2",
     "styled-components": "^5.0.0",
     "three": "^0.128.0",
-    "timeago.js": "^4.0.2"
+    "timeago.js": "^4.0.2",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "prestart": "npm-link-shared ../common/node_modules/ . react",
