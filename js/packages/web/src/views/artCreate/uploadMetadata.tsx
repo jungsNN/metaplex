@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import {
   Steps,
   Row,
@@ -51,6 +52,7 @@ import {
 import { useTokenList } from '../../contexts/tokenList';
 import { SafetyDepositDraft } from '../../actions/createAuctionManager';
 import { ArtSelector } from '../auctionCreate/artSelector';
+
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -255,6 +257,7 @@ const CategoryStep = (props: {
   confirm: (category: MetadataCategory) => void;
 }) => {
   const { width } = useWindowDimensions();
+
   return (
     <>
       <Row className="call-to-action">
@@ -350,6 +353,22 @@ const CategoryStep = (props: {
   );
 };
 
+interface NFTMetadata {
+  id: string;
+  name: string;
+  attributes: Array<string>;
+  collectionId: string;
+  creator: string;
+  owner: string | undefined;
+  cid: string | undefined;
+}
+
+
+interface ExcelCol {
+  name: string;
+  key: number;
+}
+
 const UploadStep = (props: {
   attributes: IMetadataExtension;
   setAttributes: (attr: IMetadataExtension) => void;
@@ -361,6 +380,7 @@ const UploadStep = (props: {
     props.files?.[0],
   );
   const [mainFile, setMainFile] = useState<File | undefined>(props.files?.[1]);
+  const [jsonMetadata, setJsonMetadata] = useState<Array<any>>([]);
   const [metadataList, setMetadataList] = useState<File[]>([]);
   const [nftsList, setNftsList] = useState<File[]>([]);
   const [metadataError, setMetadataError] = useState<string>();
@@ -424,6 +444,64 @@ const UploadStep = (props: {
   const urlPlaceholder = `http://example.com/path/to/${
     category === MetadataCategory.Image ? 'image' : 'file'
   }`;
+
+  const [sheetNames, setSheetNames] = useState<Array<string>>([]);
+
+  const processFiles = (excelFile) => {
+    const reader = new FileReader();
+      reader.onload = (_e) => {
+        const fileData = _e.target!.result;
+        const workbook = XLSX.read(fileData, { type: 'array', bookVBA : true });
+        setSheetNames(workbook.SheetNames)
+
+        const wksheets: NFTMetadata[][] = Object.values(workbook.SheetNames).map(n => {
+          const wksheet = workbook.Sheets[n]
+          const jsonSheet = XLSX.utils.sheet_to_json(wksheet, {
+            blankrows: false, defval: null, skipHidden: false
+          })
+          const jsonOb = JSON.parse(JSON.stringify(jsonSheet))
+          const sheetMetadata = Object.keys(jsonOb).map(i => {
+            const attrKeys = Object.keys(jsonOb[i]).filter(k => k !== "NAME" && k !== "name")
+            const nftMetadata: NFTMetadata= {
+              id: `${n}-${i}`,
+              name: jsonOb[i]["NAME"],
+              attributes: [...Object.values(attrKeys)
+                .map(k => {
+                  const attr = { }
+                  attr[k] = jsonOb[i][k]
+                  return JSON.stringify(attr)
+                }
+              )],
+              collectionId: '',
+              creator: '',
+              owner: undefined,
+              cid: undefined,
+            }
+            return nftMetadata
+          })
+
+          return sheetMetadata;
+        })
+        setJsonMetadata([...wksheets])
+      }
+
+      reader.readAsArrayBuffer(excelFile)
+    }
+
+  const makeCols = (refstr:any) => {
+    let o: Array<ExcelCol> = [],
+    C = XLSX.utils.decode_range(refstr).e.c + 1;
+    for (var i = 0; i < C; ++i) o.push({ name: XLSX.utils.encode_col(i), key: i });
+    return o;
+  }
+
+  useEffect(() => {
+    if (jsonMetadata.length > 0) {
+      // console.log('sheet names', sheetNames)
+      console.log('jsonMetadata', jsonMetadata)
+
+    }
+  }, [jsonMetadata])
 
   return (
     <>
@@ -494,11 +572,12 @@ const UploadStep = (props: {
       <Row className="content-action" style={{marginTop: '32px'}}>
         <h3>Upload All Metadata (XSL)</h3>
         <Dragger
-          accept=".xls"
+          accept=".xlsx"
           style={{ padding: 20, background: 'rgba(255, 255, 255, 0.08)' }}
           multiple
           onRemove={(file) => {
-            setMetadataList(metadataList.filter((fi) => fi.name !== file.name))
+            // setMetadataList(metadataList.filter((fi) => fi.name !== file.name))
+            setMetadataList([])
           }}
           customRequest={info => {
             // dont upload files here, handled outside of the control
@@ -523,8 +602,9 @@ const UploadStep = (props: {
                 return;
               }
 
-            setMetadataList([...metadataList, file])
+            // setMetadataList([...metadataList, file])
             setMetadataError(undefined);
+            processFiles(file)
           }}
         >
           <div className="ant-upload-drag-icon">
@@ -599,7 +679,7 @@ const UploadStep = (props: {
         </Dragger>
       </Row>
 
-      
+      {/* <ExcelSheet /> */}
 {/* 
       {props.attributes.properties?.category !== MetadataCategory.Image && (
         <Row
@@ -676,6 +756,13 @@ const UploadStep = (props: {
           }}
         />
       </Form.Item> */}
+
+      {/* <label htmlFor="xlsx-upload" >
+        Upload
+      </label>
+        <input type="file" id="xlsx-upload" onChange={(e) =>handleFiles(e)}/>
+        <button onClick={() => setJsonMetadata([])}>Clear</button> */}
+
       <Row>
         <Button
           type="primary"

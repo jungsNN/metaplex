@@ -11,32 +11,41 @@ import XLSX from "xlsx";
 const ExcelSheet = () => {
     const [data, setData] = React.useState<Array<any>>([]);
     const [cols, setCols] = React.useState<Array<any>>([]);
+    const [sheets, setSheets] = React.useState<any>();
+    React.useEffect(() => {
+      console.log('sheets', sheets)
+    }, [sheets])
+  function handleFile(file: any) {
     
-  function handleFile(file: Blob) {
     /* Boilerplate to set up FileReader */
     const reader = new FileReader();
     const rABS = !!reader.readAsBinaryString;
+
+    
     reader.onload = e => {
         if (!e.target) {
             return;
         }
       /* Parse data */
       const bstr = e.target.result;
-      const wb = XLSX.read(bstr, { type: rABS ? "binary" : "array" });
-      /* Get first worksheet */
+
+      const wb = XLSX.read(bstr, { type: "buffer" });
+      // setSheets(wb)
+    //   /* Get first worksheet */
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
-      /* Convert array of arrays */
+    //   /* Convert array of arrays */
       const data = XLSX.utils.sheet_to_json(ws, {
         header: 1
       });
-      /* Update state */
+    //   /* Update state */
       setData(data ?? [])
       setCols(makeCols(ws["!ref"]) ?? [])
     
     };
-    if (rABS) reader.readAsBinaryString(file);
-    else reader.readAsArrayBuffer(file);
+    // if (rABS) reader.readAsBinaryString(file);
+    // else reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(file);
   }
   function exportFile() {
     /* convert state to workbook */
